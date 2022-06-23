@@ -7,6 +7,9 @@
 
 #include <teaser/ply_io.h>
 #include <teaser/registration.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/point_types.h>
 
 // Macro constants for generating noise and outliers
 #define NOISE_BOUND 0.05
@@ -42,22 +45,33 @@ void addNoiseAndOutliers(Eigen::Matrix<double, 3, Eigen::Dynamic>& tgt) {
 
 int main() {
   // Load the .ply file
-  teaser::PLYReader reader;
-  teaser::PointCloud src_cloud;
-  auto status = reader.read("./example_data/bun_zipper_res3.ply", src_cloud);
-  int N = src_cloud.size();
-
+  // teaser::PLYReader reader;
+  // teaser::PointCloud src_cloud;
+  pcl::PLYReader reader;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  reader.read<pcl::PointXYZ>("/home/tang/tang/data/3d/7-scenes-redkitchen/cloud_bin_0.ply", *src_cloud);
+  reader.read<pcl::PointXYZ>("/home/tang/tang/data/3d/7-scenes-redkitchen/cloud_bin_4.ply", *target_cloud);
+  // auto status = reader.read("./example_data/bun_zipper_res3.ply", src_cloud);
+  int N = src_cloud->size();
+  int N2 = target_cloud->size();
   // Convert the point cloud to Eigen
   Eigen::Matrix<double, 3, Eigen::Dynamic> src(3, N);
   for (size_t i = 0; i < N; ++i) {
-    src.col(i) << src_cloud[i].x, src_cloud[i].y, src_cloud[i].z;
+    //std::cout<<src_cloud->points[i].x<<src_cloud->points[i].y<<src_cloud->points[i].z<<std::endl;;
+    src.col(i) << src_cloud->points[i].x, src_cloud->points[i].y, src_cloud->points[i].z;
   }
-
+  Eigen::Matrix<double, 3, Eigen::Dynamic> target(3, N2);
+  for (size_t i = 0; i < N2; ++i) {
+    //std::cout<<src_cloud->points[i].x<<src_cloud->points[i].y<<src_cloud->points[i].z<<std::endl;;
+    target.col(i) << target_cloud->points[i].x, target_cloud->points[i].y, target_cloud->points[i].z;
+  }
+  std::cout << "Loaded: " << std::endl;
   // Homogeneous coordinates
-  Eigen::Matrix<double, 4, Eigen::Dynamic> src_h;
-  src_h.resize(4, src.cols());
-  src_h.topRows(3) = src;
-  src_h.bottomRows(1) = Eigen::Matrix<double, 1, Eigen::Dynamic>::Ones(N);
+  // Eigen::Matrix<double, 4, Eigen::Dynamic> src_h;
+  // src_h.resize(4, src.cols());
+  // src_h.topRows(3) = src;
+  // src_h.bottomRows(1) = Eigen::Matrix<double, 1, Eigen::Dynamic>::Ones(N);
 
   // Apply an arbitrary SE(3) transformation
   Eigen::Matrix4d T;
@@ -69,14 +83,15 @@ int main() {
   // clang-format on
 
   // Apply transformation
-  Eigen::Matrix<double, 4, Eigen::Dynamic> tgt_h = T * src_h;
-  Eigen::Matrix<double, 3, Eigen::Dynamic> tgt = tgt_h.topRows(3);
+  // Eigen::Matrix<double, 4, Eigen::Dynamic> tgt_h = T * src_h;
+  // Eigen::Matrix<double, 3, Eigen::Dynamic> tgt = tgt_h.topRows(3);
 
-  // Add some noise & outliers
-  addNoiseAndOutliers(tgt);
+  // // Add some noise & outliers
+  // addNoiseAndOutliers(tgt);
 
   // Run TEASER++ registration
   // Prepare solver parameters
+
   teaser::RobustRegistrationSolver::Params params;
   params.noise_bound = NOISE_BOUND;
   params.cbar2 = 1;
@@ -90,7 +105,9 @@ int main() {
   // Solve with TEASER++
   teaser::RobustRegistrationSolver solver(params);
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-  solver.solve(src, tgt);
+  std::cout << "before solve: " << std::endl;
+  solver.solve(src, target);
+  std::cout << "after solve: " << std::endl;
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
   auto solution = solver.getSolution();

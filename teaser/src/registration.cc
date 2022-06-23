@@ -280,7 +280,7 @@ void teaser::TLSScaleSolver::solveForScale(const Eigen::Matrix<double, 3, Eigen:
                                            const Eigen::Matrix<double, 3, Eigen::Dynamic>& dst,
                                            double* scale,
                                            Eigen::Matrix<bool, 1, Eigen::Dynamic>* inliers) {
-
+  //TEASER_DEBUG_INFO_MSG("TLSScaleSolver.");
   Eigen::Matrix<double, 1, Eigen::Dynamic> v1_dist =
       src.array().square().colwise().sum().array().sqrt();
   Eigen::Matrix<double, 1, Eigen::Dynamic> v2_dist =
@@ -297,18 +297,25 @@ void teaser::ScaleInliersSelector::solveForScale(
     const Eigen::Matrix<double, 3, Eigen::Dynamic>& src,
     const Eigen::Matrix<double, 3, Eigen::Dynamic>& dst, double* scale,
     Eigen::Matrix<bool, 1, Eigen::Dynamic>* inliers) {
+  TEASER_DEBUG_INFO_MSG("ScaleInliersSelector.");
   // We assume no scale difference between the two vectors of points.
   *scale = 1;
-
   Eigen::Matrix<double, 1, Eigen::Dynamic> v1_dist =
       src.array().square().colwise().sum().array().sqrt();
   Eigen::Matrix<double, 1, Eigen::Dynamic> v2_dist =
       dst.array().square().colwise().sum().array().sqrt();
+  // 
+  v2_dist.resize(1, v1_dist.cols());
   double beta = 2 * noise_bound_ * sqrt(cbar2_);
-
   // A pair-wise correspondence is an inlier if it passes the following test:
   // abs(|dst| - |src|) is within maximum allowed error
+  TEASER_DEBUG_INFO_MSG("inliers size: " << inliers->cols());
+  TEASER_DEBUG_INFO_MSG("size1: " << v1_dist.array().size());
+  TEASER_DEBUG_INFO_MSG("size2: " << v2_dist.array().size());
+  TEASER_DEBUG_INFO_MSG("beta: "<< beta);
   *inliers = (v1_dist.array() - v2_dist.array()).array().abs() <= beta;
+  //TEASER_DEBUG_INFO_MSG("inliers:"<< inliers);
+  TEASER_DEBUG_INFO_MSG("999999999999999999");
 }
 
 void teaser::TLSTranslationSolver::solveForTranslation(
@@ -434,6 +441,7 @@ teaser::RobustRegistrationSolver::solve(const Eigen::Matrix<double, 3, Eigen::Dy
   src_tims_ = computeTIMs(src, &src_tims_map_);
   dst_tims_ = computeTIMs(dst, &dst_tims_map_);
   TEASER_DEBUG_INFO_MSG("Starting scale solver.");
+  TEASER_DEBUG_INFO_MSG("000000000000000000000000000000");
   solveForScale(src_tims_, dst_tims_);
   TEASER_DEBUG_INFO_MSG("Scale estimation complete.");
 
@@ -441,17 +449,25 @@ teaser::RobustRegistrationSolver::solve(const Eigen::Matrix<double, 3, Eigen::Dy
   // Note: the max_clique_ vector holds the indices of original measurements that are within the
   // max clique of the built inlier graph.
   if (params_.inlier_selection_mode != INLIER_SELECTION_MODE::NONE) {
-
+    TEASER_DEBUG_INFO_MSG("MODE is not NONE!" );
     // Create inlier graph: A graph with (indices of) original measurements as vertices, and edges
     // only when the TIM between two measurements are inliers. Note: src_tims_map_ is the same as
     // dst_tim_map_
     inlier_graph_.populateVertices(src.cols());
+    TEASER_DEBUG_INFO_MSG("33333333333333333333333333" );
+    TEASER_DEBUG_INFO_MSG("scale_inliers_mask_.cols(): "<<scale_inliers_mask_.cols() );
+    TEASER_DEBUG_INFO_MSG("src_tims_map_.cols(): "<<src_tims_map_.cols() );
+    if(scale_inliers_mask_.cols() > src_tims_map_.cols()){
+      solution_.valid = false;
+      return solution_;
+    }
     for (size_t i = 0; i < scale_inliers_mask_.cols(); ++i) {
+
       if (scale_inliers_mask_(0, i)) {
         inlier_graph_.addEdge(src_tims_map_(0, i), src_tims_map_(1, i));
       }
     }
-
+    TEASER_DEBUG_INFO_MSG("44444444444444444444444" );
     teaser::MaxCliqueSolver::Params clique_params;
 
     if (params_.inlier_selection_mode == INLIER_SELECTION_MODE::PMC_EXACT) {

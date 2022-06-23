@@ -55,6 +55,11 @@ if (BUILD_TEASER_FPFH)
     find_package(PCL 1.8 QUIET REQUIRED COMPONENTS common io features kdtree)
 endif ()
 
+find_package(PCL REQUIRED)
+  include_directories(
+  ${PCL_INCLUDE_DIRS}
+  "/usr/include/pcl-1.8/")
+
 # googletest
 configure_file(cmake/GoogleTest.CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
