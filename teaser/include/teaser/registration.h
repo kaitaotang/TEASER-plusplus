@@ -19,6 +19,7 @@
 
 #include "teaser/graph.h"
 #include "teaser/geometry.h"
+#include <memory>
 
 // TODO: might be a good idea to template Eigen::Vector3f and Eigen::VectorXf such that later on we
 // can decide to use doulbe if we want. Double vs float might give nontrivial differences..
@@ -742,10 +743,12 @@ public:
     // Initialize the scale estimator
     if (params_.estimate_scaling) {
       setScaleEstimator(
-          std::make_unique<teaser::TLSScaleSolver>(params_.noise_bound, params_.cbar2));
+          //std::make_unique<teaser::TLSScaleSolver>(params_.noise_bound, params_.cbar2));
+          std::unique_ptr<teaser::TLSScaleSolver>(new teaser::TLSScaleSolver(params_.noise_bound, params_.cbar2)));
     } else {
       setScaleEstimator(
-          std::make_unique<teaser::ScaleInliersSelector>(params_.noise_bound, params_.cbar2));
+          //std::make_unique<teaser::ScaleInliersSelector>(params_.noise_bound, params_.cbar2));
+	  std::unique_ptr<teaser::ScaleInliersSelector>(new teaser::ScaleInliersSelector(params_.noise_bound, params_.cbar2)));
     }
 
     // Initialize the rotation estimator
@@ -754,18 +757,21 @@ public:
         params_.rotation_gnc_factor, params_.noise_bound};
     switch (params_.rotation_estimation_algorithm) {
     case ROTATION_ESTIMATION_ALGORITHM::GNC_TLS: { // GNC-TLS method
-      setRotationEstimator(std::make_unique<teaser::GNCTLSRotationSolver>(rotation_params));
+      //setRotationEstimator(std::make_unique<teaser::GNCTLSRotationSolver>(rotation_params));
+      setRotationEstimator(std::unique_ptr<teaser::GNCTLSRotationSolver>(new teaser::GNCTLSRotationSolver(rotation_params)));
       break;
     }
     case ROTATION_ESTIMATION_ALGORITHM::FGR: { // FGR method
-      setRotationEstimator(std::make_unique<teaser::FastGlobalRegistrationSolver>(rotation_params));
+      //setRotationEstimator(std::make_unique<teaser::FastGlobalRegistrationSolver>(rotation_params));
+     setRotationEstimator(std::unique_ptr<teaser::FastGlobalRegistrationSolver>(new teaser::FastGlobalRegistrationSolver(rotation_params)));
       break;
     }
     }
 
     // Initialize the translation estimator
     setTranslationEstimator(
-        std::make_unique<teaser::TLSTranslationSolver>(params_.noise_bound, params_.cbar2));
+        //std::make_unique<teaser::TLSTranslationSolver>(params_.noise_bound, params_.cbar2));
+	std::unique_ptr<teaser::TLSTranslationSolver>(new teaser::TLSTranslationSolver(params_.noise_bound, params_.cbar2)));
 
     // Clear member variables
     max_clique_.clear();

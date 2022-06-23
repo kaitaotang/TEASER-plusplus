@@ -80,8 +80,9 @@ TEST(RegistrationTest, SolveForScale) {
     auto start = std::chrono::high_resolution_clock::now();
     teaser::RobustRegistrationSolver solver;
 
-    solver.setScaleEstimator(std::make_unique<teaser::TLSScaleSolver>(noise_bound, 1));
-
+    //solver.setScaleEstimator(std::make_unique<teaser::TLSScaleSolver>(noise_bound, 1));
+    solver.setScaleEstimator(std::unique_ptr<teaser::TLSScaleSolver>(new teaser::TLSScaleSolver(noise_bound, 1)));
+    
     Eigen::Matrix<int, 2, Eigen::Dynamic> object_map;
     Eigen::Matrix<int, 2, Eigen::Dynamic> scene_map;
     auto object_tims = solver.computeTIMs(object_points, &object_map);
