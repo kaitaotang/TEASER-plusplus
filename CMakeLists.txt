@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(teaserpp VERSION 1.0.0)
 
 #set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "-std=c++14")
+set(CMAKE_CXX_FLAGS "-std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g -pthread")
+set(CMAKE_CXX_STANDARD 17)                              # 指定C++标准：98、11、14、17、20
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)  
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/" ${CMAKE_MODULE_PATH})
 
